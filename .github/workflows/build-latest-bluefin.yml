@@ -1,4 +1,4 @@
-name: Bluefin Latest
+name: bluefin Latest
 on:
   merge_group:
   pull_request:
