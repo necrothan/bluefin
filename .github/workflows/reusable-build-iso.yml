@@ -56,7 +56,7 @@ jobs:
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
 
       - name: Checkout Repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4
 
       - name: Matrix Variables
         run: |
@@ -126,6 +126,10 @@ jobs:
           # Get list of refs from directory
           FLATPAK_REFS_DIR=${{ github.workspace }}/${{ steps.generate-flatpak-dir-shortname.outputs.flatpak-dir-shortname }}
           FLATPAK_REFS_DIR_LIST=$(cat ${FLATPAK_REFS_DIR}/* | tr '\n' ' ' )
+          DX_FLATPAK_REFS_DIR_LIST="$(cat dx_flatpaks/* | tr '\n' ' ' )"
+          if [[ ${{ env.IMAGE_NAME }} == *"-dx"* ]]; then
+            FLATPAK_REFS_DIR_LIST="${FLATPAK_REFS_DIR_LIST} ${DX_FLATPAK_REFS_DIR_LIST}"
+          fi
           # Generate install script
           cat << EOF > ${TEMP_FLATPAK_INSTALL_DIR}/script.sh
           cat /temp_flatpak_install_dir/script.sh
@@ -147,7 +151,7 @@ jobs:
           docker rmi ${image}
 
       - name: Build ISOs
-        uses: jasonn3/build-container-installer@v1.2.1
+        uses: jasonn3/build-container-installer@v1.2.2
         id: build
         with:
           arch: x86_64
@@ -177,7 +181,7 @@ jobs:
       - name: Upload ISOs and Checksum to Job Artifacts
         if: github.ref_name == 'testing'
         #if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
         with:
           name: ${{ steps.build.outputs.iso_name }}
           path: ${{ steps.upload-directory.outputs.iso-upload-dir }}

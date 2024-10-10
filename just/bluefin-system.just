@@ -82,33 +82,6 @@ devmode:
         fi
     fi
 
-alias shell := configure-shell
-
-# Switch to a different shell
-configure-shell ACTION="":
-    #!/bin/bash
-    source /usr/lib/ujust/ujust.sh
-    CURRENT_SHELL="$(cat /etc/passwd | grep ":$UID:" | cut '-d:' '-f7')"
-    OPTION={{ ACTION }}
-    if [ "$OPTION" == "help" ]; then
-      echo "Usage: ujust shell <option>"
-      echo "  <option>: Specify the quick option to skip the prompt"
-      echo "  Use 'fish' to select fish"
-      echo "  Use 'zsh' to select zsh"
-      echo "  Use 'bash' to select bash"
-      exit 0
-    elif [ "$OPTION" == "" ]; then
-      echo "${bold}Shell configuration${normal}"
-      echo "${USER}'s shell is currently ${CURRENT_SHELL}"
-      OPTION=$(Choose "fish" "zsh" "bash")
-    fi
-    if [ -z "$OPTION" ]; then
-      exit 0
-    else
-      sudo usermod $USER --shell /usr/bin/$OPTION 
-      printf "${USER}'s shell is now %s.\n" "$(cat /etc/passwd | grep ":$UID:" | cut '-d:' '-f7')"
-    fi
-
 alias gnome-vrr := toggle-gnome-vrr
 
 # Enable or Disable Gnome-VRR
@@ -271,12 +244,12 @@ install-system-flatpaks:
 configure-grub:
     @/usr/libexec/configure-grub.sh
 
+alias rollback-helper := rebase-helper
+alias switch-channel := rebase-helper
+
 # Rebase assistant
 rebase-helper:
     @/usr/bin/ublue-rollback-helper
-
-alias rollback-helper := rebase-helper
-alias switch-channel := rebase-helper
 
 update-ng:
     echo "Note: This command doesn't work if you have locally layered packages" 
@@ -289,6 +262,7 @@ toggle-tailscale:
     #!/bin/bash
     set -euo pipefail
     source /usr/lib/ujust/ujust.sh
+    source /usr/lib/os-release
 
     TAILSCALED_STATUS="$(systemctl is-enabled tailscaled || true )"
 
@@ -301,22 +275,31 @@ toggle-tailscale:
         echo "tailscaled service status: $TAILSCALED_STATUS"
     fi
 
-    TAILSCALE_QS="$(gnome-extensions list | grep -q "tailscale@joaophi.github.com"; echo $?)"
-    if [ "$TAILSCALE_QS" == 0 ]; then
-      TAILSCALE_QS="Installed"
-    else
-      echo "The Tailscale QS extension for Gnome is not installed. Please install it and then run this script again."
-    fi
 
-    if [ "$TAILSCALE_QS" == "Installed" ] && [ "$TAILSCALED" == "Installed" ]; then
+    if [ "$TAILSCALED" == "Installed" ]; then
       echo "Enable or disable Tailscale?"
       TS_OPTION=$(ugum choose Enable Disable)
+
+      # gnome-extensions is only available on Bluefin (Gnome)
+      if [ "$VARIANT" == "silverblue" ]; then
+        TAILSCALE_QS="$(gnome-extensions list | grep -q "tailscale@joaophi.github.com"; echo $?)"
+        if [ "$TAILSCALE_QS" == 0 ]; then
+          TAILSCALE_QS="Installed"
+        else
+          echo "The Tailscale QS extension for Gnome is not installed. Please install it and then run this script again."
+        fi
+
+        if [ "$TS_OPTION" = "Enable" ]; then
+          gnome-extensions enable tailscale@joaophi.github.com
+        elif [ "$TS_OPTION" = "Disable" ]; then
+          gnome-extensions disable tailscale@joaophi.github.com
+        fi
+      fi
 
       if [ "$TS_OPTION" = "Enable" ]; then
         systemctl enable --now tailscaled
         TAILSCALED_STATUS="$(systemctl is-enabled tailscaled || true )"
         if [ "$TAILSCALED_STATUS" == "enabled" ]; then
-          gnome-extensions enable tailscale@joaophi.github.com
           echo "${b}${green}Tailscale is enabled.${n}"
           echo "If this is your first time using Tailscale, setup is necessary."
           echo "Refer to Tailscale's documentation at https://tailscale.com/kb/1346/start."
@@ -325,7 +308,6 @@ toggle-tailscale:
         systemctl disable --now tailscaled
         TAILSCALED_STATUS="$(systemctl is-enabled tailscaled || true )"
         if [ "$TAILSCALED_STATUS" == "disabled" ]; then
-          gnome-extensions disable tailscale@joaophi.github.com
           echo "${b}${red}Tailscale is disabled.${n}"
         fi
       fi

@@ -8,12 +8,12 @@ ARG TARGET_BASE="${TARGET_BASE:-bluefin}"
 ARG NVIDIA_TYPE="${NVIDIA_TYPE:-}"
 ARG KERNEL="${KERNEL:-6.9.7-200.fc40.x86_64}"
 ARG UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:-latest}"
+ARG SHA_HEAD_SHORT="${SHA_HEAD_SHORT}"
 
 # FROM's for Mounting
 ARG KMOD_SOURCE_COMMON="ghcr.io/ublue-os/akmods:${AKMODS_FLAVOR}-${FEDORA_MAJOR_VERSION}"
 ARG ZFS_CACHE="ghcr.io/ublue-os/akmods-zfs:coreos-stable-${FEDORA_MAJOR_VERSION}"
-# Pin the NVIDIA images to the last build of the 555 driver due to issues with monitor freezing on the newer 560 drivers
-ARG NVIDIA_CACHE="ghcr.io/ublue-os/akmods-nvidia:${AKMODS_FLAVOR}-${FEDORA_MAJOR_VERSION}-20240806"
+ARG NVIDIA_CACHE="ghcr.io/ublue-os/akmods-nvidia:${AKMODS_FLAVOR}-${FEDORA_MAJOR_VERSION}"
 ARG KERNEL_CACHE="ghcr.io/ublue-os/${AKMODS_FLAVOR}-kernel:${KERNEL}"
 FROM ${KMOD_SOURCE_COMMON} AS akmods
 FROM ${ZFS_CACHE} AS zfs_cache
@@ -35,7 +35,7 @@ ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION}"
 ARG NVIDIA_TYPE="${NVIDIA_TYPE:-}"
 ARG KERNEL="${KERNEL:-6.9.7-200.fc40.x86_64}"
 ARG UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:-latest}"
-
+ARG SHA_HEAD_SHORT="${SHA_HEAD_SHORT}"
 
 # Build, cleanup, commit.
 RUN --mount=type=cache,dst=/var/cache/rpm-ostree \

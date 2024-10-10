@@ -17,7 +17,15 @@ if [[ "${BASE_IMAGE_NAME}" = "kinoite" ]]; then
     sed -i 's@Bluefin@Aurora@g' /usr/share/applications/system-update.desktop
     sed -i 's@Bluefin@Aurora@g' /usr/share/ublue-os/motd/tips/10-tips.md
     sed -i 's@Bluefin@Aurora@g' /usr/libexec/ublue-flatpak-manager
-    rm -f /usr/etc/profile.d/gnome-ssh-askpass.{csh,sh} # This shouldn't be pulled in
+    rm -f /etc/profile.d/gnome-ssh-askpass.{csh,sh} # This shouldn't be pulled in
     rm -f /usr/share/kglobalaccel/org.kde.konsole.desktop
     systemctl enable kde-sysmonitor-workaround.service
+    # Test aurora gschema override for errors. If there are no errors, proceed with compiling aurora gschema, which includes setting overrides.
+    mkdir -p /tmp/aurora-schema-test
+    find /usr/share/glib-2.0/schemas/ -type f ! -name "*.gschema.override" -exec cp {} /tmp/aurora-schema-test/ \;
+    cp /usr/share/glib-2.0/schemas/zz0-aurora-modifications.gschema.override /tmp/aurora-schema-test/
+    echo "Running error test for aurora gschema override. Aborting if failed."
+    glib-compile-schemas --strict /tmp/aurora-schema-test
+    echo "Compiling gschema to include aurora setting overrides"
+    glib-compile-schemas /usr/share/glib-2.0/schemas &>/dev/null    
 fi
